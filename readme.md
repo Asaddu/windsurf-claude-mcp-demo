@@ -1,47 +1,50 @@
-# Code Quest Demo
+# React + TypeScript + Vite
 
-A fun web application for solving Python coding challenges with a modern React frontend and FastAPI backend.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Features
-- Interactive code editor with Python execution
-- Real-time code validation
-- Beautiful UI with Tailwind CSS
-- WebSocket-based communication
+Currently, two official plugins are available:
 
-## Tech Stack
-- Backend: Python 3.10+, FastAPI
-- Frontend: React 18, Tailwind CSS, Monaco Editor
-- Development: Poetry, npm, Vite
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Getting Started
+## Expanding the ESLint configuration
 
-1. Install backend dependencies:
-```bash
-cd backend
-poetry install
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+
+- Configure the top-level `parserOptions` property like this:
+
+```js
+export default tseslint.config({
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
 ```
 
-2. Install frontend dependencies:
-```bash
-cd frontend
-npm install
+- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
+- Optionally add `...tseslint.configs.stylisticTypeChecked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
+
+export default tseslint.config({
+  // Set the react version
+  settings: { react: { version: '18.3' } },
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+})
 ```
-
-3. Start the backend server:
-```bash
-cd backend
-poetry run python main.py
-```
-
-4. Start the frontend development server:
-```bash
-cd frontend
-npm run dev
-```
-
-5. Open http://localhost:5173 in your browser
-
-## Development
-- Backend runs on http://localhost:8000
-- Frontend runs on http://localhost:5173
-- WebSocket endpoint: ws://localhost:8000/ws
