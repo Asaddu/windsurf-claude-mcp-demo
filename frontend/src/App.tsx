@@ -19,6 +19,48 @@ interface Achievement {
   xp: number
 }
 
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://code-quest-api.vercel.app' 
+  : 'http://localhost:8000'
+
+const WS_URL = process.env.NODE_ENV === 'production'
+  ? 'wss://code-quest-api.vercel.app/ws'
+  : 'ws://localhost:8000/ws'
+
+// Mock challenges for when API is not available
+const MOCK_CHALLENGES = [
+  {
+    id: 1,
+    title: "The Quest Begins",
+    description: "Write a function that returns your hero's battle cry! Make it inspiring!",
+    template: "def battle_cry():\n    # Write your hero's battle cry\n    return 'For glory!'",
+    level: "Beginner",
+    xp: 100,
+    hints: [
+      "A function returns a value using the 'return' keyword",
+      "Strings in Python are wrapped in quotes, like 'Hello' or \"Hello\"",
+      "Try making your battle cry personal and unique!"
+    ],
+    example: "def battle_cry():\n    return 'For honor and glory!'",
+    explanation: "This function uses the 'return' keyword to send back a string (text) that represents your hero's battle cry."
+  },
+  {
+    id: 2,
+    title: "Dragon's Math",
+    description: "The dragon demands a solution! Write a function that calculates the sum of all numbers from 1 to n.",
+    template: "def dragon_sum(n):\n    # Calculate the sum of numbers from 1 to n\n    pass",
+    level: "Adventurer",
+    xp: 150,
+    hints: [
+      "You can use a for loop: 'for i in range(1, n+1)'",
+      "Keep track of the sum in a variable",
+      "The formula n * (n + 1) / 2 can also solve this!"
+    ],
+    example: "def dragon_sum(n):\n    return sum(range(1, n + 1))",
+    explanation: "This function uses Python's built-in sum() and range() functions to add up all numbers from 1 to n."
+  }
+]
+
 function App() {
   const [challenges, setChallenges] = useState<Challenge[]>([])
   const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null)
@@ -33,9 +75,11 @@ function App() {
   const [showHints, setShowHints] = useState(false)
   const [currentHintIndex, setCurrentHintIndex] = useState(0)
   const [showExample, setShowExample] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    fetch('http://localhost:8000/challenges')
+    // Try to fetch from API, fallback to mock data if API is not available
+    fetch(`${API_URL}/challenges`)
       .then(res => res.json())
       .then(data => {
         setChallenges(data)
@@ -44,47 +88,91 @@ function App() {
           setCode(data[0].template)
         }
       })
+      .catch(err => {
+        console.log('Using mock challenges:', err)
+        setChallenges(MOCK_CHALLENGES)
+        setCurrentChallenge(MOCK_CHALLENGES[0])
+        setCode(MOCK_CHALLENGES[0].template)
+      })
 
-    const websocket = new WebSocket('ws://localhost:8000/ws')
-    websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (data.type === 'result') {
-        setIsRunning(false)
-        setOutput(data.output)
-        setXp(data.totalXp)
-        
-        if (data.rewards && data.rewards.length > 0) {
-          const newAchievement = data.rewards[data.rewards.length - 1]
-          setLatestAchievement(newAchievement)
-          setShowAchievement(true)
-          setTimeout(() => setShowAchievement(false), 3000)
-          setAchievements(prev => [...prev, ...data.rewards])
+    const connectWebSocket = () => {
+      const websocket = new WebSocket(WS_URL)
+      
+      websocket.onopen = () => {
+        console.log('WebSocket Connected')
+        setIsConnected(true)
+      }
+
+      websocket.onclose = () => {
+        console.log('WebSocket Disconnected')
+        setIsConnected(false)
+        // Try to reconnect in 5 seconds
+        setTimeout(connectWebSocket, 5000)
+      }
+
+      websocket.onerror = (error) => {
+        console.log('WebSocket Error:', error)
+        setIsConnected(false)
+      }
+
+      websocket.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        if (data.type === 'result') {
+          setIsRunning(false)
+          setOutput(data.output)
+          setXp(data.totalXp)
+          
+          if (data.rewards && data.rewards.length > 0) {
+            const newAchievement = data.rewards[data.rewards.length - 1]
+            setLatestAchievement(newAchievement)
+            setShowAchievement(true)
+            setTimeout(() => setShowAchievement(false), 3000)
+            setAchievements(prev => [...prev, ...data.rewards])
+          }
+        } else if (data.type === 'hint_reward') {
+          setXp(data.totalXp)
+          setAchievements(prev => [...prev, data.achievement])
         }
-      } else if (data.type === 'hint_reward') {
-        setXp(data.totalXp)
-        setAchievements(prev => [...prev, data.achievement])
+      }
+
+      setWs(websocket)
+
+      return () => {
+        websocket.close()
       }
     }
-    setWs(websocket)
 
-    return () => {
-      websocket.close()
-    }
+    connectWebSocket()
   }, [])
 
   const handleRunCode = useCallback(() => {
-    if (ws && ws.readyState === WebSocket.OPEN && currentChallenge) {
-      setIsRunning(true)
+    if (!currentChallenge) return
+
+    setIsRunning(true)
+    if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
         type: 'code_submission',
         code: code,
         challengeId: currentChallenge.id
       }))
+    } else {
+      // Mock response when WebSocket is not available
+      setTimeout(() => {
+        const success = Math.random() > 0.3
+        setOutput(success ? "Your code runs like magic!" : "The spell fizzled... Try again!")
+        if (success) {
+          const xpGained = currentChallenge.xp
+          setXp(prev => prev + xpGained)
+        }
+        setIsRunning(false)
+      }, 1000)
     }
   }, [ws, code, currentChallenge])
 
   const handleRequestHint = useCallback(() => {
-    if (ws && ws.readyState === WebSocket.OPEN && currentChallenge) {
+    if (!currentChallenge) return
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({
         type: 'request_hint',
         challengeId: currentChallenge.id
@@ -122,13 +210,16 @@ function App() {
 
       {/* Header */}
       <header className="bg-gray-800 shadow-lg border-b border-gray-700 sticky top-0 z-40">
-        <div className="w-full mx-auto py-4 px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
               <BeakerIcon className="h-8 w-8 text-purple-500" />
               Code Quest
             </h1>
             <div className="flex items-center gap-4">
+              {!isConnected && (
+                <span className="text-red-500">Offline Mode</span>
+              )}
               <div className="bg-gray-700 px-4 py-2 rounded-lg flex items-center gap-2">
                 <FireIcon className="h-6 w-6 text-yellow-500" />
                 <span className="font-bold">{xp} XP</span>
@@ -139,9 +230,9 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <main className="w-full mx-auto">
+      <main className="container mx-auto">
         {/* Challenge Selection */}
-        <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <div className="px-4 py-4">
           <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
             {challenges.map(challenge => (
               <button
@@ -166,7 +257,7 @@ function App() {
         </div>
 
         {currentChallenge && (
-          <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+          <div className="space-y-6 px-4">
             {/* Challenge Info */}
             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
               <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
