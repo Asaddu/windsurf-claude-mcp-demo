@@ -1,9 +1,12 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import json
-import random
 import time
 from typing import Dict, List
+import ast
+import sys
+from io import StringIO
+from contextlib import redirect_stdout
 
 app = FastAPI()
 
@@ -17,6 +20,60 @@ app.add_middleware(
 )
 
 clients: Dict[WebSocket, dict] = {}
+
+def is_safe_code(code: str) -> bool:
+    """Check if the code is safe to execute."""
+    try:
+        tree = ast.parse(code)
+        for node in ast.walk(tree):
+            # Prevent imports, file operations, and system calls
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                return False
+            if isinstance(node, ast.Call):
+                if isinstance(node.func, ast.Name):
+                    if node.func.id in ['eval', 'exec', 'open', 'system']:
+                        return False
+        return True
+    except:
+        return False
+
+def run_code_safely(code: str, test_cases: List[dict]) -> tuple:
+    """Run code safely and return output and success status."""
+    if not is_safe_code(code):
+        return "Code contains unsafe operations!", False
+
+    # Capture stdout
+    output_buffer = StringIO()
+    
+    try:
+        # Create a new namespace for the code
+        namespace = {}
+        
+        # Execute the code in the namespace
+        with redirect_stdout(output_buffer):
+            exec(code, namespace)
+        
+        # Run test cases
+        for test_case in test_cases:
+            func_name = code.split('def ')[1].split('(')[0].strip()
+            if func_name not in namespace:
+                return f"Function {func_name} not found!", False
+            
+            func = namespace[func_name]
+            result = func(*test_case.get('input', []))
+            
+            if 'expected_type' in test_case:
+                if not isinstance(result, eval(test_case['expected_type'])):
+                    return f"Expected return type {test_case['expected_type']}, got {type(result).__name__}", False
+            elif 'expected' in test_case:
+                if result != test_case['expected']:
+                    return f"Test failed! Expected {test_case['expected']}, got {result}", False
+        
+        output = output_buffer.getvalue()
+        return output or "Code ran successfully!", True
+        
+    except Exception as e:
+        return f"Error: {str(e)}", False
 
 CHALLENGES = [
     {
@@ -116,13 +173,12 @@ async def websocket_endpoint(websocket: WebSocket):
                 if not challenge:
                     continue
 
-                execution_time = random.uniform(0.1, 0.5)
-                time.sleep(execution_time)
-                
-                success = random.random() > 0.3
-                output = "Your code runs like magic!" if success else "The spell fizzled... Try using the hints for guidance!"
+                output, success = run_code_safely(code, challenge["test_cases"])
+                execution_time = time.time() - start_time
                 
                 rewards = []
+                xp_gained = 0
+                
                 if success:
                     xp_gained = challenge["xp"]
                     
@@ -145,7 +201,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "success": success,
                     "output": output,
                     "executionTime": execution_time,
-                    "xpGained": xp_gained if success else 0,
+                    "xpGained": xp_gained,
                     "totalXp": clients[websocket]["score"],
                     "rewards": rewards
                 }
