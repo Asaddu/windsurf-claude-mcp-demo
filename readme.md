@@ -1,50 +1,138 @@
-# React + TypeScript + Vite
+# Code Quest 🏰
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive coding game that makes learning Python fun and engaging! Try it out at [Code Quest](https://code-quest-frontend-q50rd3li3-asaddus-projects.vercel.app/)
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Code Quest is a gamified coding platform where you can:
+- Solve Python coding challenges of varying difficulty
+- Earn XP and unlock achievements
+- Get hints and view example solutions
+- See real-time feedback on your code
+- Learn through an engaging, fantasy-themed interface
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+### 🎮 Interactive Coding Environment
+- Built-in Monaco code editor (same as VS Code)
+- Real-time code execution
+- Instant feedback on your solutions
+- Support for Python with syntax highlighting
 
-- Configure the top-level `parserOptions` property like this:
+### 🏆 Progression System
+- Earn XP for completing challenges
+- Unlock achievements for special accomplishments
+- Track your progress across multiple challenges
+- Bonus XP for efficient solutions
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+### 📚 Learning Support
+- Progressive hint system
+- Example solutions with detailed explanations
+- Clear error messages and feedback
+- Test cases to validate your solutions
+
+### 🎨 Modern UI
+- Responsive design for all devices
+- Dark theme for comfortable coding
+- Clean and intuitive interface
+- Real-time notifications for achievements
+
+## Technical Stack
+
+### Frontend
+- React with TypeScript
+- Vite for fast development and building
+- Tailwind CSS for styling
+- Monaco Editor for code editing
+- WebSocket for real-time communication
+
+### Backend
+- FastAPI for the web framework
+- WebSocket support for real-time features
+- Safe code execution environment
+- Automated test case validation
+
+## Live Demo
+
+Visit [Code Quest](https://code-quest-frontend-q50rd3li3-asaddus-projects.vercel.app/) to try it out!
+
+Current Challenges:
+1. **The Quest Begins**: Write your first battle cry function
+2. **Dragon's Math**: Calculate sums using loops or mathematical formulas
+3. **Magical Palindrome**: Check if words read the same forwards and backwards
+
+## Development
+
+### Prerequisites
+- Node.js 16+
+- Python 3.8+
+- npm or yarn
+
+### Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Asaddu/windsurf-claude-mcp-demo.git
+cd windsurf-claude-mcp-demo
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+2. Install frontend dependencies:
+```bash
+cd frontend
+npm install
 ```
+
+3. Install backend dependencies:
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### Running Locally
+
+1. Start the backend:
+```bash
+cd backend
+uvicorn main:app --reload
+```
+
+2. Start the frontend:
+```bash
+cd frontend
+npm run dev
+```
+
+Visit `http://localhost:5173` to see the app running locally.
+
+## Deployment
+
+The application is deployed on Vercel:
+- Frontend: React application with Vite
+- Backend: Python FastAPI with WebSocket support
+
+## Security
+
+- Safe code execution environment
+- Protection against dangerous operations
+- Isolated execution namespace
+- Input validation and sanitization
+
+## Future Plans
+
+- More challenging coding problems
+- Additional achievement types
+- User accounts and persistence
+- Leaderboards and social features
+- More programming languages
+
+## Contributing
+
+Feel free to open issues or submit pull requests for:
+- New coding challenges
+- UI improvements
+- Bug fixes
+- Feature suggestions
+
+## License
+
+MIT License - feel free to use and modify!
