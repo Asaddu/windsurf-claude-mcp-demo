@@ -20,11 +20,11 @@ interface Achievement {
 }
 
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://code-quest-api.vercel.app' 
+  ? 'https://windsurf-claude-mcp-demo-backend.vercel.app' 
   : 'http://localhost:8000'
 
 const WS_URL = process.env.NODE_ENV === 'production'
-  ? 'wss://code-quest-api.vercel.app/ws'
+  ? 'wss://windsurf-claude-mcp-demo-backend.vercel.app/ws'
   : 'ws://localhost:8000/ws'
 
 // Mock challenges for when API is not available
