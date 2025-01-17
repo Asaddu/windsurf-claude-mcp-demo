@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Editor from '@monaco-editor/react'
 import { BeakerIcon, FireIcon, SparklesIcon, LightBulbIcon, BookOpenIcon } from '@heroicons/react/24/solid'
+import { API_URL, WS_URL } from './config'
 
 interface Challenge {
   id: number
@@ -18,14 +19,6 @@ interface Achievement {
   name: string
   xp: number
 }
-
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://windsurf-claude-mcp-demo-backend.vercel.app' 
-  : 'http://localhost:8000'
-
-const WS_URL = process.env.NODE_ENV === 'production'
-  ? 'wss://windsurf-claude-mcp-demo-backend.vercel.app/ws'
-  : 'ws://localhost:8000/ws'
 
 // Mock challenges for when API is not available
 const MOCK_CHALLENGES = [
